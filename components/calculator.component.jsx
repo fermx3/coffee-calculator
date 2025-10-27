@@ -1,85 +1,97 @@
 import { useState } from "react";
-import CalculatorInput from "./calculatorInput.component";
+import styles from "./calculator.module.css";
 
 const Calculator = () => {
-  const [coffeeRatio, setCoffeeRatio] = useState(1);
-  const [waterRatio, setWaterRatio] = useState(20);
   const [coffeeGrams, setCoffeeGrams] = useState(15);
-  const [waterGrams, setWaterGrams] = useState(300);
-  const [isCoffeeLocked, setIsCoffeeLocked] = useState(false);
+  const [waterGrams, setWaterGrams] = useState(250);
+  const [isRatioLocked, setIsRatioLocked] = useState(false);
 
-  const onChangeHandler = (e) => {
-    const currentValue = Number(e.target.value);
-    let newWaterGrams, newCoffeeGrams;
+  // Calcular el ratio actual
+  const calculateRatio = (coffee, water) => {
+    if (coffee === 0 || water === 0) return "1:0";
+    const ratio = water / coffee;
+    return `1:${ratio.toFixed(1)}`;
+  };
 
-    switch (e.target.name) {
-      case "coffeeRatio":
-        setCoffeeRatio(currentValue);
-        newWaterGrams = (coffeeGrams * waterRatio) / currentValue;
-        setWaterGrams(Math.round(newWaterGrams * 100) / 100);
-        break;
-      case "waterRatio":
-        setWaterRatio(currentValue);
-        newWaterGrams = (coffeeGrams * currentValue) / coffeeRatio;
-        setWaterGrams(Math.round(newWaterGrams * 100) / 100);
-        break;
-      case "coffeeGrams":
-        setCoffeeGrams(currentValue);
-        newWaterGrams = (currentValue * waterRatio) / coffeeRatio;
-        setWaterGrams(Math.round(newWaterGrams * 100) / 100);
-        break;
-      case "waterGrams":
-        setWaterGrams(currentValue);
-        newCoffeeGrams = (currentValue * coffeeRatio) / waterRatio;
-        setCoffeeGrams(Math.round(newCoffeeGrams * 100) / 100);
-        break;
+  const currentRatio = calculateRatio(coffeeGrams, waterGrams);
 
-      default:
-        console.log(e.target.name);
-        break;
+  const handleCoffeeChange = (e) => {
+    const newCoffee = Number(e.target.value) || 0;
+
+    if (isRatioLocked && newCoffee > 0) {
+      // Si el ratio está bloqueado, recalcular agua
+      const ratio = waterGrams / coffeeGrams;
+      const newWater = Math.round(newCoffee * ratio * 10) / 10;
+      setWaterGrams(newWater);
     }
+    setCoffeeGrams(newCoffee);
+  };
+
+  const handleWaterChange = (e) => {
+    const newWater = Number(e.target.value) || 0;
+
+    if (isRatioLocked && newWater > 0) {
+      // Si el ratio está bloqueado, recalcular café
+      const ratio = waterGrams / coffeeGrams;
+      const newCoffee = Math.round((newWater / ratio) * 10) / 10;
+      setCoffeeGrams(newCoffee);
+    }
+    setWaterGrams(newWater);
+  };
+
+  const toggleRatioLock = () => {
+    setIsRatioLocked(!isRatioLocked);
   };
 
   return (
-    <form>
-      <div>
-        <CalculatorInput
-          label="Coffee Ratio"
-          name="coffeeRatio"
-          value={coffeeRatio}
-          onChange={onChangeHandler}
-        />
-        <span>:</span>
-        <CalculatorInput
-          name="waterRatio"
-          value={waterRatio}
-          onChange={onChangeHandler}
-        />
+    <div className={styles.calculator}>
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>
+          <span className={styles.labelText}>Café (gramos)</span>
+          <input
+            className={styles.input}
+            type="number"
+            min="0"
+            step="0.1"
+            value={coffeeGrams}
+            onChange={handleCoffeeChange}
+            placeholder="15"
+          />
+        </label>
       </div>
-      <div>
-        <CalculatorInput
-          label="Coffee (grams)"
-          name="coffeeGrams"
-          value={coffeeGrams}
-          onChange={onChangeHandler}
-          lockedGroup="gramsGroup"
-          selector="coffeeLocked"
-          defaultChecked={true}
-        />
-        <CalculatorInput
-          label="Water (grams)"
-          name="waterGrams"
-          value={waterGrams}
-          onChange={onChangeHandler}
-          lockedGroup="gramsGroup"
-          selector="waterLocked"
-        />
-        {/* <label>Base coffee:</label>
-        <input type="radio" name="base" value="baseCoffee" />
-        <label>Base water:</label>
-        <input type="radio" name="base" value="baseWater" /> */}
+
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>
+          <span className={styles.labelText}>Agua (gramos)</span>
+          <input
+            className={styles.input}
+            type="number"
+            min="0"
+            step="0.1"
+            value={waterGrams}
+            onChange={handleWaterChange}
+            placeholder="250"
+          />
+        </label>
       </div>
-    </form>
+
+      <div className={styles.ratioDisplay}>
+        <div className={styles.ratioValue}>{currentRatio}</div>
+        <button
+          type="button"
+          className={`${styles.lockButton} ${isRatioLocked ? styles.locked : ""}`}
+          onClick={toggleRatioLock}
+          title={isRatioLocked ? "Ratio bloqueado - Click para desbloquear" : "Click para bloquear ratio"}
+        >
+          {isRatioLocked ? "🔒 Ratio Bloqueado" : "🔓 Bloquear Ratio"}
+        </button>
+        {isRatioLocked && (
+          <p className={styles.lockInfo}>
+            Al cambiar café o agua, el otro valor se ajustará automáticamente
+          </p>
+        )}
+      </div>
+    </div>
   );
 };
 
